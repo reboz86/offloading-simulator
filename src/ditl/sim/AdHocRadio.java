@@ -207,7 +207,6 @@ public class AdHocRadio extends Radio implements LinkTrace.Handler, Listener<Tra
 		}
 	}
 
-	@Override
 	public Set<Router> getPeers(Router router) {
 		Set<Router> peers = new HashSet<Router>();
 		Integer id = router.id();

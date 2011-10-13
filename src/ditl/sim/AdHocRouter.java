@@ -16,7 +16,7 @@ public class AdHocRouter extends Router {
 	
 	@Override
 	public TransferOpportunity getBestTransferOpportunity(long time, Radio radio){
-		Set<Router> peers = radio.getPeers(this);
+		Set<Router> peers = ((AdHocRadio)radio).getPeers(this);
 		TransferOpportunity best = null;
 		TransferOpportunity opp;
 		for ( Router peer : peers ){
@@ -32,6 +32,7 @@ public class AdHocRouter extends Router {
 		return best;
 	}
 	
+	@Override
 	protected TransferOpportunity getBestTransferTo(long time, Radio radio, Router dest){
 		TransferOpportunity best = null;
 		for ( Message msg : messages ){

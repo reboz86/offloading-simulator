@@ -104,5 +104,9 @@ public class Router {
 	public TransferOpportunity getBestTransferOpportunity(long time, Radio radio){
 		return null; // this router is passive
 	}
+	
+	protected TransferOpportunity getBestTransferTo(long time, Radio radio, Router dest){
+		return null; // this router is passive
+	}
 
 }
