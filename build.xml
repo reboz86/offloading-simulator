@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<project default="jar" >
+  <property name="ditl-core" location="include/ditl-core.jar"/>
+  <property name="ditl-graphs" location="include/ditl-graphs.jar"/>
+  <property name="ditl-transfers" location="include/ditl-transfers.jar"/>
+  <property name="commons" location="include/commons-cli-1.2.jar"/>
+
+  <target name="compile" >
+    <copy todir="build" >
+      <fileset dir="src" excludes="**/*.java" />
+    </copy>
+    <javac srcdir="src" destdir="build" classpath="${ditl-core}:${ditl-graphs}:${ditl-transfers}:${commons}" includeantruntime="false" />
+  </target>
+  
+  <target name="clean" >
+    <delete dir="build" />
+  </target>
+
+  <target name="proper" depends="clean">
+    <delete dir="dist" />
+  </target>
+
+  <target name="jar" depends="compile">
+    <jar destfile="dist/ditl-sim.jar" filesetmanifest="mergewithoutmain">
+      <fileset dir="build"/>
+      <zipfileset excludes="META-INF/" src="${ditl-graphs}"/>
+      <zipfileset excludes="META-INF/" src="${ditl-core}"/>
+      <zipfileset excludes="META-INF/" src="${ditl-transfers}"/>
+      <zipfileset excludes="META-INF/" src="${commons}"/>
+    </jar>
+  </target>
+</project>
