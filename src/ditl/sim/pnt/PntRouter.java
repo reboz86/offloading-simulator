@@ -10,7 +10,6 @@ public class PntRouter extends AdHocRouter {
 
 	protected PervasiveInfraRadio infra_radio;
 	protected LinkedList<ControlMessage> upload_buffer = new LinkedList<ControlMessage>();
-	protected boolean registered = false;
 	
 	public PntRouter(AdHocRadio adhocRadio, PervasiveInfraRadio infraRadio, 
 			Integer id, int bufferSize, Bus<BufferEvent> bus) {
@@ -36,11 +35,6 @@ public class PntRouter extends AdHocRouter {
 	@Override
 	protected void sentMessage(long time, Message msg, Router to, Radio radio) throws IOException{
 		if ( radio == infra_radio ){
-			if ( msg instanceof RegisterMessage ){
-				if ( ((RegisterMessage)msg).type() == RegisterMessage.ENTER ){
-					registered = true;
-				}
-			}
 			upload_buffer.remove(msg); // not very efficient
 		} else {
 			super.sentMessage(time, msg, to, radio);
@@ -57,9 +51,6 @@ public class PntRouter extends AdHocRouter {
 	}
 	
 	protected TransferOpportunity getBestControlTransfer(long time){
-		if ( ! registered ){
-			upload_buffer.addFirst(new RegisterMessage(this, infra_radio.root(), time, RegisterMessage.ENTER));
-		}
 		if ( ! upload_buffer.isEmpty() ){
 			return new TransferOpportunity(this, infra_radio.root(), upload_buffer.pop());
 		}
