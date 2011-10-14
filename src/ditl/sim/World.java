@@ -48,25 +48,11 @@ public class World implements PresenceTrace.Handler, Listener<MessageEvent> {
 	}
 	
 	public Router getRandomRouter(){
-		Random rng = RNG.getInstance();
-		int k = rng.nextInt(routers.size());
-		int j=0;
-		for ( Router r : routers.values() ){
-			if ( j >= k )
-				return r;
-			j++;
-		}
-		return null;
+		return RNG.randomFromSet(routers.values());
 	}
 	
 	public Set<Router> getRandomRouters(double p){
-		Random rng = RNG.getInstance();
-		Set<Router> group = new HashSet<Router>();
-		for ( Router router : routers.values() ){
-			if ( rng.nextDouble() < p ) 
-				group.add(router);
-		}
-		return group;
+		return RNG.randomSubSet(routers.values(),p);
 	}
 	
 	public Router getRouterById(Integer id){

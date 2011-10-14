@@ -1,6 +1,6 @@
 package ditl.sim;
 
-import java.util.Random;
+import java.util.*;
 
 public class RNG {
 
@@ -12,5 +12,25 @@ public class RNG {
 	
 	public static Random getInstance(){
 		return rng;
+	}
+	
+	public static<T> T randomFromSet(Collection<T> set){
+		int k = rng.nextInt(set.size());
+		int j=0;
+		for ( T r : set ){
+			if ( j >= k )
+				return r;
+			j++;
+		}
+		return null;
+	}
+	
+	public static<T> Set<T> randomSubSet(Collection<T> set, double p){
+		Set<T> group = new HashSet<T>();
+		for ( T obj : set ){
+			if ( rng.nextDouble() < p ) 
+				group.add(obj);
+		}
+		return group;
 	}
 }
