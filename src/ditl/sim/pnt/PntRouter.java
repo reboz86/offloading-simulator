@@ -52,7 +52,8 @@ public class PntRouter extends AdHocRouter {
 	
 	protected TransferOpportunity getBestControlTransfer(long time){
 		if ( ! upload_buffer.isEmpty() ){
-			return new TransferOpportunity(this, infra_radio.root(), upload_buffer.pop());
+			if ( infra_radio.canPushUp(_id) )
+				return new TransferOpportunity(this, infra_radio.root(), upload_buffer.pop());
 		}
 		return null;
 	}

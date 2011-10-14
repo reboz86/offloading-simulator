@@ -162,4 +162,8 @@ public class PervasiveInfraRadio extends Radio implements PresenceTrace.Handler 
 	public Router root(){
 		return _world.getRouterById(root_id);
 	}
+	
+	public Router getClient(Integer id){
+		return _world.getRouterById(id);
+	}
 }
