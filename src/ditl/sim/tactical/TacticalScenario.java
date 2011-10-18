@@ -242,7 +242,7 @@ public class TacticalScenario extends WriteApp {
 			HelpException {
 		
 		super.parseArgs(cli, args);
-		store_names = Arrays.copyOfRange(args, 1, args.length-1);
+		store_names = Arrays.copyOfRange(args, 1, args.length);
 		graph_options.parse(cli);
 		seed = Long.parseLong(cli.getOptionValue(seedOption,"0"));
 		intra_only = cli.hasOption(intraOnlyOption);
