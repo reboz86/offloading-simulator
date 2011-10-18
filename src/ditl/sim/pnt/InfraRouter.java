@@ -10,8 +10,8 @@ import ditl.sim.*;
 public class InfraRouter extends Router implements Generator, Listener<Message>, PresenceTrace.Handler {
 
 	protected final PervasiveInfraRadio infra_radio;
-	protected Map<Message, Set<Integer>> msg_infected = new HashMap<Message, Set<Integer>>();
-	protected Map<Message, Set<Integer>> msg_sane = new HashMap<Message, Set<Integer>>();
+	protected Map<Integer, Set<Integer>> msg_infected = new HashMap<Integer, Set<Integer>>();
+	protected Map<Integer, Set<Integer>> msg_sane = new HashMap<Integer, Set<Integer>>();
 	protected Bus<Message> msg_update_bus = new Bus<Message>();
 	protected Set<Integer> present_ids = new HashSet<Integer>();
 	
@@ -34,9 +34,10 @@ public class InfraRouter extends Router implements Generator, Listener<Message>,
 	@Override
 	public void newMessage(long time, Message msg) throws IOException {
 		super.newMessage(time, msg);
-		msg_infected.put(msg, new HashSet<Integer>());
-		msg_sane.put(msg, new HashSet<Integer>());
+		msg_infected.put(msg.msgId(), new HashSet<Integer>());
+		msg_sane.put(msg.msgId(), new HashSet<Integer>(present_ids));
 		queueMsgUpdate(time, msg);
+		queueMsgUpdate(msg.expirationTime()-panic_interval, msg); // always trigger panic at right time
 	}
 	
 	private void queueMsgUpdate(long time, Message msg){
@@ -56,8 +57,8 @@ public class InfraRouter extends Router implements Generator, Listener<Message>,
 	@Override
 	public void expireMessage(long time, Message msg) throws IOException {
 		super.expireMessage(time, msg);
-		msg_sane.remove(msg);
-		msg_infected.remove(msg);
+		msg_sane.remove(msg.msgId());
+		msg_infected.remove(msg.msgId());
 		msg_update_bus.removeFromQueueAfterTime(time, new MessageMatcher(msg));
 		num_to_push.expireMessage(msg);
 	}
@@ -81,12 +82,17 @@ public class InfraRouter extends Router implements Generator, Listener<Message>,
 	@Override
 	public void handle(long time, Collection<Message> messages) {
 		for ( Message msg : messages ){
-			Set<Integer> infected = msg_infected.get(msg); // here infected is the sum of actually infected and receiving nodes 
-			Set<Integer> sane = msg_sane.get(msg); 
+			Set<Integer> infected = msg_infected.get(msg.msgId()); // here infected is the sum of actually infected and receiving nodes 
+			Set<Integer> sane = msg_sane.get(msg.msgId()); 
 			
 			if ( panic(time,msg) ){
-				for ( Integer i : sane )
-					tryPush(time, msg, i, sane, infected); // push to everyone
+				Iterator<Integer> i = sane.iterator();
+				while ( i.hasNext() ){
+					Integer to = i.next();
+					infected.add(to);
+					tryPush(time, msg, to); // push to everyone
+					i.remove();
+				}
 			} else {
 				int n = num_to_push.numToPush(msg, time, infected.size(), present_ids.size() );
 				n = Math.min(n, sane.size());
@@ -94,7 +100,9 @@ public class InfraRouter extends Router implements Generator, Listener<Message>,
 					Integer next = who_to_push.whoToPush(msg,infected, sane);
 					if ( next == null )
 						break;
-					tryPush(time, msg, next, sane, infected);
+					sane.remove(next);
+					infected.add(next);
+					tryPush(time, msg, next);
 				}
 				
 			}
@@ -106,12 +114,10 @@ public class InfraRouter extends Router implements Generator, Listener<Message>,
 		return ( msg.expirationTime() - time <= panic_interval );
 	}
 	
-	private void tryPush(long time, Message msg, Integer dest_id, Set<Integer> sane, Set<Integer> infected){
+	private void tryPush(long time, Message msg, Integer dest_id){
 		if ( infra_radio.canPushDown(dest_id) ){
 			TransferOpportunity opp = new TransferOpportunity(this, infra_radio.getClient(dest_id), msg);
 			infra_radio.startNewTransfer(time, opp);
-			sane.remove(dest_id);
-			infected.add(dest_id);
 		}
 	}
 	
@@ -122,8 +128,8 @@ public class InfraRouter extends Router implements Generator, Listener<Message>,
 			if ( transfer.to().acceptMessage(transfer.message()) ){ // dest will still accept the message
 				Message msg = transfer.message();
 				Integer id = transfer.to().id();
-				msg_infected.get(msg).remove(id);
-				msg_sane.get(msg).add(id);
+				msg_infected.get(msg.msgId()).remove(id);
+				msg_sane.get(msg.msgId()).add(id);
 			}
 		}
 	}

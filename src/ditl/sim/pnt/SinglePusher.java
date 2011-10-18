@@ -1,12 +1,12 @@
 package ditl.sim.pnt;
 
-import java.util.Set;
+import java.util.*;
 
 import ditl.sim.Message;
 
 public class SinglePusher extends DefaultNumToPush {
 
-	private Set<Integer> _sent;
+	private Set<Integer> _sent = new HashSet<Integer>();
 	private int _initial = 1;
 	
 	public SinglePusher() {}

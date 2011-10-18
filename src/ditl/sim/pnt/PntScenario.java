@@ -13,7 +13,6 @@ import ditl.graphs.*;
 import ditl.graphs.cli.GraphOptions;
 import ditl.sim.*;
 import ditl.sim.BufferEvent;
-import ditl.sim.tactical.*;
 import ditl.transfers.*;
 
 public class PntScenario extends WriteApp {
@@ -102,17 +101,25 @@ public class PntScenario extends WriteApp {
 		
 		msgPeriod *= tps;
 		msgDelay *= tps;
-		
-		MessageGenerator msgGenerator = new MessageGenerator(msgPeriod,msgPeriod,msgDelay,msgDelay,new GroupMessage.Factory(world, msgSize, msgSize));
-		runner.addGenerator(msgGenerator);
-		
 		panic_time *= tps;
 		send_incr *= tps;
 		
 		min_time = (min_time != null)? min_time * tps : Long.MIN_VALUE;
 		max_time = (max_time != null)? max_time * tps : Long.MAX_VALUE;
 		
-		InfraRouter infra_router = new InfraRouter(infra, who_to_push, num_to_push, send_incr, panic_time, root_id, bufferSize, bufferBus);
+		final InfraRouter infra_router = new InfraRouter(infra, who_to_push, num_to_push, send_incr, panic_time, root_id, bufferSize, bufferBus);
+		runner.addGenerator(infra_router);
+		presenceBus.addListener(infra_router.presenceListener());
+		presenceEventBus.addListener(infra_router.presenceEventListener());
+		
+		MessageGenerator msgGenerator = new MessageGenerator(msgPeriod,msgPeriod,msgDelay,msgDelay, 
+				new MessageFactory<BroadcastMessage>(msgSize, msgSize){
+					@Override
+					public BroadcastMessage getNew(long creationTime, long expirationTime) {
+						return new BroadcastMessage(infra_router, nextBytes(), creationTime, expirationTime);
+					}
+			});
+		runner.addGenerator(msgGenerator);
 		
 		PntRouterFactory routerFactory = null;		
 		if ( simple ){
@@ -189,7 +196,7 @@ public class PntScenario extends WriteApp {
 			HelpException {
 		
 		super.parseArgs(cli, args);
-		store_names = Arrays.copyOfRange(args, 1, args.length-1);
+		store_names = Arrays.copyOfRange(args, 1, args.length);
 		graph_options.parse(cli);
 		seed = Long.parseLong(cli.getOptionValue(seedOption,"0"));
 		adhoc_bitrate = Double.parseDouble(cli.getOptionValue(adhocBitrateOption,"8388608")); // default 1 MBytes/s
