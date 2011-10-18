@@ -22,6 +22,7 @@ public class PervasiveInfraRadio extends Radio implements PresenceTrace.Handler 
 		up_bitrate_generator = upBitrateGenerator;
 		down_bitrate_generator = downBitrateGenerator;
 		root_id = rootId;
+		addListener(this);
 	}
 	
 	public boolean canPushUp(Integer id){
