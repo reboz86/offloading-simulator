@@ -67,14 +67,15 @@ public class MessageGenerator extends Bus<MessageEvent> implements Generator, Li
 	}
 
 	@Override
-	public void incr(long time) throws IOException {}
+	public void incr(long time) throws IOException {
+		if ( ! hasNextEvent() )
+			createNewMessage(Math.max(time, min_time));
+	}
 	
 
 	@Override
 	public void seek(long time) throws IOException {
 		reset();
-		if ( ! hasNextEvent() )
-			createNewMessage(Math.max(time, min_time));
 	}
 	
 	
