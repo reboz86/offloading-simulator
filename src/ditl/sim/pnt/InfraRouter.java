@@ -162,8 +162,10 @@ public class InfraRouter extends Router implements Generator, Listener<Message>,
 		return new Listener<Presence>(){
 			@Override
 			public void handle(long time, Collection<Presence> events) {
-				for ( Presence p : events )
-					present_ids.add(p.id());
+				for ( Presence p : events ){
+					if ( ! p.id().equals(_id)) // ignore self
+						present_ids.add(p.id());
+				}
 			}
 		};
 	}

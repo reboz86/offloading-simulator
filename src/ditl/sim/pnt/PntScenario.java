@@ -119,6 +119,7 @@ public class PntScenario extends WriteApp {
 						return new BroadcastMessage(infra_router, nextBytes(), creationTime, expirationTime);
 					}
 			});
+		msgGenerator.setTimeLimits(min_time, max_time);
 		runner.addGenerator(msgGenerator);
 		
 		PntRouterFactory routerFactory = null;		

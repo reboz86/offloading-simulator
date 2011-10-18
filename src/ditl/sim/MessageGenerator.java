@@ -30,19 +30,18 @@ public class MessageGenerator extends Bus<MessageEvent> implements Generator, Li
 	}
 	
 	private void createNewMessage(long time){
-		if ( time > min_time && time < max_time ){
-			long next_expire_time = nextExpireTime(time);
-			Message msg = msg_factory.getNew(time, next_expire_time);
-			queue(time, msg.getNewEvent());
-			queue(next_expire_time, msg.getExpireEvent());
-		}
+		long next_expire_time = nextExpireTime(time);
+		Message msg = msg_factory.getNew(time, next_expire_time);
+		queue(time, msg.getNewEvent());
+		queue(next_expire_time, msg.getExpireEvent());
 	}
 
 	@Override
 	public void handle(long time, Collection<MessageEvent> events) {
 		for ( MessageEvent event : events )
 			if ( event.isNew() ) // previous message is just starting
-				createNewMessage(nextStartTime(time));
+				if ( time >= min_time && time <= max_time ) // we are still good timewise
+					createNewMessage(nextStartTime(time));
 	}
 	
 	private long nextExpireTime(long time){
@@ -67,15 +66,14 @@ public class MessageGenerator extends Bus<MessageEvent> implements Generator, Li
 	}
 
 	@Override
-	public void incr(long time) throws IOException {
-		if ( ! hasNextEvent() )
-			createNewMessage(Math.max(time, min_time));
-	}
+	public void incr(long time) throws IOException {}
 	
 
 	@Override
 	public void seek(long time) throws IOException {
 		reset();
+		if ( ! hasNextEvent() )
+			createNewMessage(Math.max(time, min_time));
 	}
 	
 	
