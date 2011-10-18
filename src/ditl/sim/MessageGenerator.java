@@ -7,26 +7,35 @@ import ditl.*;
 
 public class MessageGenerator extends Bus<MessageEvent> implements Generator, Listener<MessageEvent>{
 	
-	private long min_time;
-	private long max_time;
+	private long min_time = Long.MIN_VALUE;
+	private long max_time = Long.MAX_VALUE;
+	private long min_period;
+	private long max_period;
 	private long min_ttl;
 	private long max_ttl;
 	private MessageFactory<?> msg_factory;
 	
-	public MessageGenerator(long minTime, long maxTime, long minTTL, long maxTTL, MessageFactory<?> msgFactory){
-		min_time = minTime;
-		max_time = maxTime;
+	public MessageGenerator(long minPeriod, long maxPeriod, long minTTL, long maxTTL, MessageFactory<?> msgFactory){
+		min_period = minPeriod;
+		max_period = maxPeriod;
 		min_ttl = minTTL;
 		max_ttl = maxTTL;
 		msg_factory = msgFactory;
 		addListener(this);
 	}
 	
+	public void setTimeLimits(long minTime, long maxTime){
+		min_time = minTime;
+		max_time = maxTime;
+	}
+	
 	private void createNewMessage(long time){
-		long next_expire_time = nextExpireTime(time);
-		Message msg = msg_factory.getNew(time, next_expire_time);
-		queue(time, msg.getNewEvent());
-		queue(next_expire_time, msg.getExpireEvent());
+		if ( time > min_time && time < max_time ){
+			long next_expire_time = nextExpireTime(time);
+			Message msg = msg_factory.getNew(time, next_expire_time);
+			queue(time, msg.getNewEvent());
+			queue(next_expire_time, msg.getExpireEvent());
+		}
 	}
 
 	@Override
@@ -43,7 +52,7 @@ public class MessageGenerator extends Bus<MessageEvent> implements Generator, Li
 	
 	private long nextStartTime(long time){
 		Random rng = RNG.getInstance();
-		return time + min_time + (long)((max_time-min_time)*rng.nextDouble()); 
+		return time + min_period + (long)((max_period-min_period)*rng.nextDouble()); 
 	}
 	
 	@Override
@@ -54,17 +63,19 @@ public class MessageGenerator extends Bus<MessageEvent> implements Generator, Li
 	@Override
 	public int priority() {
 		// TODO check!
-		return Trace.defaultPriority;
+		return Integer.MAX_VALUE; // lowest priority
 	}
 
 	@Override
-	public void incr(long time) throws IOException {
+	public void incr(long time) throws IOException {}
+	
+
+	@Override
+	public void seek(long time) throws IOException {
+		reset();
 		if ( ! hasNextEvent() )
-			createNewMessage(time);
+			createNewMessage(Math.max(time, min_time));
 	}
-
-	@Override
-	public void seek(long time) throws IOException {}
 	
 	
 	
