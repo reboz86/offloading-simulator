@@ -8,9 +8,9 @@ public class PrioAverage extends ArrivalWho {
 
 	@Override
 	public Integer whoToPush(Message msg, Set<Integer> infected, Set<Integer> sane){
-		double avg = getAverageArrival();
-		double bestInt = Double.MAX_VALUE;
-		double closestTime = Double.NaN;
+		long avg = getAverageArrival();
+		long bestInt = Long.MAX_VALUE;
+		long closestTime = Long.MIN_VALUE;
 		for( Integer i : sane ){
 			if ( Math.abs(_arrivalTimes.get(i)-avg) < bestInt ){
 				closestTime = _arrivalTimes.get(i);
@@ -26,10 +26,10 @@ public class PrioAverage extends ArrivalWho {
 		return RNG.randomFromSet(closest);
 	}
 	
-	private double getAverageArrival(){
+	private long getAverageArrival(){
 		long num = 0;
 		for ( Long arr : _arrivalTimes.values() )
 			num += arr;
-		return (double)num/((double)_arrivalTimes.size());
+		return num/_arrivalTimes.size();
 	}
 }

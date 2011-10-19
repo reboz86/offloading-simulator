@@ -8,7 +8,7 @@ public class PrioOldest extends ArrivalWho {
 
 	@Override
 	public Integer whoToPush(Message msg, Set<Integer> infected, Set<Integer> sane){
-		double oldestArrival = Double.MAX_VALUE;
+		long oldestArrival = Long.MAX_VALUE;
 		for( Integer i : sane ){
 			if ( _arrivalTimes.get(i) < oldestArrival ){
 				oldestArrival = _arrivalTimes.get(i);

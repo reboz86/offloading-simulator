@@ -37,7 +37,8 @@ public class InfraRouter extends Router implements Generator, Listener<Message>,
 		msg_infected.put(msg.msgId(), new HashSet<Integer>());
 		msg_sane.put(msg.msgId(), new HashSet<Integer>(present_ids));
 		queueMsgUpdate(time, msg);
-		queueMsgUpdate(msg.expirationTime()-panic_interval, msg); // always trigger panic at right time
+		long panic_time = Math.max(time, msg.expirationTime()-panic_interval);
+		queueMsgUpdate(panic_time, msg); // always trigger panic at right time
 	}
 	
 	private void queueMsgUpdate(long time, Message msg){
@@ -60,7 +61,8 @@ public class InfraRouter extends Router implements Generator, Listener<Message>,
 		msg_sane.remove(msg.msgId());
 		msg_infected.remove(msg.msgId());
 		msg_update_bus.removeFromQueueAfterTime(time, new MessageMatcher(msg));
-		num_to_push.expireMessage(msg);
+		if ( num_to_push != null )
+			num_to_push.expireMessage(msg);
 	}
 
 	@Override
