@@ -27,6 +27,7 @@ public class PntScenario extends WriteApp {
 	protected final static String maxTimeOption = "max-time";
 	protected final static String msgSizeOption = "message-size";
 	protected final static String panicTimeOption = "panic-time";
+	protected final static String floatIntervalOption = "float-interval";
 	protected final static String seedOption = "seed";
 	protected final static String numInitCopiesOption = "n-init-copies";
 	protected final static String randomPushOption = "rand-push";
@@ -60,6 +61,7 @@ public class PntScenario extends WriteApp {
 	long msgDelay;
 	int bufferSize;
 	long panic_time;
+	Long float_interval;
 	long send_incr;
 	long ctrl_incr;
 	long ds_shift;
@@ -124,6 +126,8 @@ public class PntScenario extends WriteApp {
 		panic_time *= tps;
 		send_incr *= tps;
 		ctrl_incr *= tps;
+		if ( float_interval != null )
+			float_interval *= tps;
 		
 		min_time = (min_time != null)? min_time * tps : presence.minTime();
 		max_time = (max_time != null)? max_time * tps : presence.maxTime();
@@ -176,7 +180,8 @@ public class PntScenario extends WriteApp {
 			}
 		}
 		
-		final InfraRouter infra_router = new InfraRouter(infra, who_to_push, num_to_push, send_incr, panic_time, root_id, bufferSize, bufferBus);
+		final InfraRouter infra_router = new InfraRouter(infra, who_to_push, num_to_push, send_incr, panic_time, 
+				float_interval, root_id, bufferSize, bufferBus);
 		runner.addGenerator(infra_router);
 		presenceBus.addListener(infra_router.presenceListener());
 		presenceEventBus.addListener(infra_router.presenceEventListener());
@@ -245,6 +250,7 @@ public class PntScenario extends WriteApp {
 		options.addOption(null,controlIncrOption,true,"Sending increment for control messages");
 		options.addOption(null,dsOption,true,"Use dominating set oracle");
 		options.addOption(null, infraOnlyOption, false, "Only use infra");
+		options.addOption(null, floatIntervalOption, true, "Force push in node present for more than <arg> seconds");
 		OptionGroup whoGroup = new OptionGroup();
 		whoGroup.setRequired(false);
 		whoGroup.addOption(new Option(null,randomPushOption,false,"Push to random nodes"));
@@ -298,6 +304,8 @@ public class PntScenario extends WriteApp {
 		panic_time = Long.parseLong(cli.getOptionValue(panicTimeOption,"11")); // With default parameters, it takes a little over 10 seconds to download a msg from the infrastructure
 		send_incr = Long.parseLong(cli.getOptionValue(sendIncrOption, "1")); // by default, try sending every second
 		ctrl_incr = Long.parseLong(cli.getOptionValue(controlIncrOption, "60")); // by default, try sending control messages once per minute
+		if ( cli.hasOption(floatIntervalOption) )
+			float_interval = Long.parseLong(cli.getOptionValue(floatIntervalOption));
 		
 		infra_only = cli.hasOption(infraOnlyOption);
 		
