@@ -20,6 +20,10 @@ public class TransferOpportunity implements Comparable<TransferOpportunity> {
 		return _to;
 	}
 	
+	public Message message(){
+		return _msg;
+	}
+	
 	public Transfer toTransfer(Radio radio, long startTime, double bitrate){
 		return new Transfer(radio, _msg, _from, _to, bitrate, startTime);
 	}
