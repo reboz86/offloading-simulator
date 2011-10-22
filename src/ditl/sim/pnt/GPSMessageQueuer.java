@@ -31,20 +31,22 @@ public class GPSMessageQueuer
 			public void handle(long time, Collection<MovementEvent> events) {
 				for ( MovementEvent mev : events){
 					Movement m;
-					switch(mev.type()){
-					case MovementEvent.IN: 
-						m = mev.origMovement();
-						movements.put(m.id(), m);
-						break;
-						
-					case MovementEvent.OUT:
-						m = movements.get(mev.id());
-						movements.remove(m.id());
-						break;
-						
-					default:
-						m = movements.get(mev.id());
-						m.handleEvent(time, mev);
+					if ( ! mev.id().equals(root_id) ){
+						switch(mev.type()){
+						case MovementEvent.IN: 
+							m = mev.origMovement();
+							movements.put(m.id(), m);
+							break;
+							
+						case MovementEvent.OUT:
+							m = movements.get(mev.id());
+							movements.remove(m.id());
+							break;
+							
+						default:
+							m = movements.get(mev.id());
+							m.handleEvent(time, mev);
+						}
 					}
 				}
 			}
@@ -56,7 +58,8 @@ public class GPSMessageQueuer
 			@Override
 			public void handle(long time, Collection<Movement> events) {
 				for ( Movement m : events ){
-					movements.put(m.id(), m);
+					if ( ! m.id().equals(root_id) )
+						movements.put(m.id(), m);
 				}
 			}
 		};

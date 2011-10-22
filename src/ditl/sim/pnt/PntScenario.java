@@ -159,6 +159,8 @@ public class PntScenario extends WriteApp {
 				Bus<MovementEvent> mvEventBus = new Bus<MovementEvent>();
 				mvBus.addListener(queuer.movementListener());
 				mvEventBus.addListener(queuer.movementEventListener());
+				mv_reader.setBus(mvEventBus);
+				mv_reader.setStateBus(mvBus);
 				runner.addGenerator(mv_reader);
 				runner.addGenerator(queuer);
 				presenceBus.addListener(((GPSWho)who_to_push).presenceListener());

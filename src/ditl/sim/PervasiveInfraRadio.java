@@ -100,7 +100,8 @@ public class PervasiveInfraRadio extends Radio implements PresenceTrace.Handler 
 			tryStartNewPushDown(time, to);
 		} else { // uplink transfer 
 			active_uploads.remove(from);
-			tryStartNewPushUp(time, from);
+			if ( present_node_ids.contains(from) ) // node is still present
+				tryStartNewPushUp(time, from);
 		}
 	}
 
