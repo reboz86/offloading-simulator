@@ -203,6 +203,9 @@ public class PntScenario extends WriteApp {
 		presenceBus.addListener(world.presenceListener());
 		presenceEventBus.addListener(world.presenceEventListener());
 		
+		// important to add the infra listener after the world
+		presenceEventBus.addListener(infra.presenceEventListener());
+		presenceBus.addListener(infra.presenceListener());
 		
 		
 		MessageTrace messages = (MessageTrace)_store.newTrace("messages", MessageTrace.type, force);
