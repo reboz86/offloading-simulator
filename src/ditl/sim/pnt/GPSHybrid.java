@@ -17,7 +17,6 @@ public class GPSHybrid extends GPSWho {
 		
 		Set<Zone> seenZones = new HashSet<Zone>();
 		PriorityQueue<ScoreCard> scores = new PriorityQueue<ScoreCard>();
-		double totalScore = 0.0;
 		
 		// then get gravity repulsion over all sane nodes
 		for ( Integer i : sane ){
@@ -31,7 +30,6 @@ public class GPSHybrid extends GPSWho {
 				seenZones.add(zone);
 				sc.score = getInvGravityPotential(zone.center());
 				scores.add(sc);
-				totalScore += sc.score;
 			}
 		}
 		scores = prune(scores, 10 ); // get top ten zones
