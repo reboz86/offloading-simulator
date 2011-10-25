@@ -48,7 +48,7 @@ public class PntScenario extends WriteApp {
 	protected final static String sendIncrOption = "send-incr";
 	protected final static String dsOption = "dominating-set";
 	
-	private Integer root_id = -42;
+	static Integer root_id = -42;
 	
 	GraphOptions graph_options = new GraphOptions(GraphOptions.PRESENCE, GraphOptions.LINKS, GraphOptions.GROUPS, GraphOptions.MOVEMENT);
 	Long seed;
