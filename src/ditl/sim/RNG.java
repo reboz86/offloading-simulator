@@ -15,6 +15,8 @@ public class RNG {
 	}
 	
 	public static<T> T randomFromSet(Collection<T> set){
+		if ( rng == null )
+			RNG.init(0);
 		int k = rng.nextInt(set.size());
 		int j=0;
 		for ( T r : set ){
@@ -26,6 +28,8 @@ public class RNG {
 	}
 	
 	public static<T> Set<T> randomSubSet(Collection<T> set, double p){
+		if ( rng == null )
+			RNG.init(0);
 		Set<T> group = new HashSet<T>();
 		for ( T obj : set ){
 			if ( rng.nextDouble() < p ) 
