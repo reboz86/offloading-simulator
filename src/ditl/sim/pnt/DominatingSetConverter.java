@@ -48,6 +48,8 @@ public class DominatingSetConverter extends Bus<Object> implements
 	private GroupTrace _ds;
 	
 	private Set<Integer> present = new HashSet<Integer>();
+	private Map<Integer,Long> arrivals = new HashMap<Integer,Long>();
+	private Map<Integer,Long> departures = new HashMap<Integer,Long>();
 	private Map<Integer, Group> groups = new HashMap<Integer,Group>();
 	private Map<Integer,Set<Integer>> starting_groups = new HashMap<Integer,Set<Integer>>();
 	private Map<Integer,Set<Integer>> node_groups = new HashMap<Integer,Set<Integer>>();
@@ -132,6 +134,8 @@ public class DominatingSetConverter extends Bus<Object> implements
 		if ( started ){
 			// first handle previous time period
 			long t = time - _delay;
+			purgeBeforeTime(t, departures); // remove those that departed a time periods ago
+			purgeBeforeTime(t, arrivals);
 			Set<Integer> ds = new DSCalculator().calculateNewDS();
 			if ( t == _ccs.minTime() ){ // this should be the initial state  
 				ds_writer.setInitState(min_time, Collections.singleton(new Group(ds_gid, ds)));
@@ -147,10 +151,27 @@ public class DominatingSetConverter extends Bus<Object> implements
 				for ( Integer i : prev_ds_nodes )
 					if ( ! ds.contains(i) )					
 						leaving.add(i);
+						
 				if ( ! leaving.isEmpty() )
-					ds_writer.append(t, new GroupEvent(ds_gid, GroupEvent.LEAVE, leaving));
+					ds_writer.queue(t, new GroupEvent(ds_gid, GroupEvent.LEAVE, leaving));
+										
+				// handle new ds nodes that arrive or leave during the time period
+				for ( Iterator<Integer> i=joining.iterator(); i.hasNext(); ){
+					Integer k = i.next();
+					Long arr_time = arrivals.get(k);
+					Long dep_time = departures.get(k);
+					if ( arr_time != null ){ // node was present at beginning of time period
+						ds_writer.queue(arr_time, new GroupEvent(ds_gid, GroupEvent.JOIN, new Integer[]{k}));
+						i.remove();
+					}
+					if ( dep_time != null ){ // node left during the time period
+						ds_writer.queue(dep_time, new GroupEvent(ds_gid, GroupEvent.LEAVE, new Integer[]{k}));
+					}
+				}
 				if ( ! joining.isEmpty() )
-					ds_writer.append(t, new GroupEvent(ds_gid, GroupEvent.JOIN, joining));
+					ds_writer.queue(t, new GroupEvent(ds_gid, GroupEvent.JOIN, joining));
+				
+				ds_writer.flush();
 			}
 		
 			// then clear state and prepare for new dominating set
@@ -173,8 +194,10 @@ public class DominatingSetConverter extends Bus<Object> implements
 			@Override
 			public void handle(long time, Collection<Presence> events) {
 				for ( Presence p : events )
-					if ( ! p.id().equals(PntScenario.root_id))
+					if ( ! p.id().equals(PntScenario.root_id)){
+						arrivals.put(p.id(),time);
 						present.add(p.id());
+					}
 			}
 		};
 	}
@@ -188,8 +211,10 @@ public class DominatingSetConverter extends Bus<Object> implements
 					Integer id = pev.id();
 					if ( pev.isIn() ){
 						present.add(id);
+						arrivals.put(id,time);
 					} else {
 						present.remove(id);
+						departures.put(id,time);
 					}
 				}
 			}
@@ -282,6 +307,15 @@ public class DominatingSetConverter extends Bus<Object> implements
 		}
 		for ( Integer gid : gids )
 			current_groups.get(gid).add(id);
+	}
+	
+	private void purgeBeforeTime(long time, Map<Integer,Long> map){
+		for ( Iterator<Map.Entry<Integer, Long>> i=map.entrySet().iterator(); i.hasNext(); ){
+			Map.Entry<Integer, Long> e = i.next();
+			if ( e.getValue() <= time ){
+				i.remove();
+			}
+		}
 	}
 	
 	private void init(){
