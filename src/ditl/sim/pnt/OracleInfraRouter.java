@@ -55,6 +55,16 @@ public class OracleInfraRouter extends Router implements Generator, PresenceTrac
 		msg_sane.remove(msg.msgId());
 		msg_infected.remove(msg.msgId());
 		msg_update_bus.removeFromQueueAfterTime(time, new MessageMatcher(msg));
+		for ( Iterator<Transfer> i = incoming_transfers.iterator(); i.hasNext(); ){
+			Transfer transfer = i.next();
+			Message m = transfer.message();
+			if ( m instanceof AckMessage ){
+				if ( ((AckMessage)m).ackMsgId().equals(msg.msgId()) ){
+					i.remove();
+					transfer.abort(time);
+				}
+			}
+		}
 	}
 
 	@Override

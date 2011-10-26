@@ -82,6 +82,16 @@ public class InfraRouter extends Router implements Generator, PresenceTrace.Hand
 		msg_update_bus.removeFromQueueAfterTime(time, new MessageMatcher(msg));
 		if ( num_to_push != null )
 			num_to_push.expireMessage(msg);
+		for ( Iterator<Transfer> i = incoming_transfers.iterator(); i.hasNext(); ){
+			Transfer transfer = i.next();
+			Message m = transfer.message();
+			if ( m instanceof AckMessage ){
+				if ( ((AckMessage)m).ackMsgId().equals(msg.msgId()) ){
+					i.remove();
+					transfer.abort(time);
+				}
+			}
+		}
 	}
 
 	@Override
