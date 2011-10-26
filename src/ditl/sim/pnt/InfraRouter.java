@@ -21,10 +21,11 @@ public class InfraRouter extends Router implements Generator, PresenceTrace.Hand
 	protected final WhoToPush who_to_push;
 	protected final long send_incr;
 	protected final long panic_interval;
-	protected final Long float_req_interval; 
+	protected final Long float_req_interval;
+	protected final long guard_time;
 	
 	public InfraRouter(PervasiveInfraRadio infraRadio, WhoToPush whoToPush, NumToPush numToPush,
-			long sendIncr, long panicInterval, Long floatReqInterval, Integer id, int bufferSize, Bus<BufferEvent> bus) {
+			long sendIncr, long panicInterval, long guardTime, Long floatReqInterval, Integer id, int bufferSize, Bus<BufferEvent> bus) {
 		super(id, bufferSize, bus);
 		infra_radio = infraRadio;
 		who_to_push = whoToPush;
@@ -34,6 +35,7 @@ public class InfraRouter extends Router implements Generator, PresenceTrace.Hand
 		send_incr = sendIncr;
 		panic_interval = panicInterval;
 		float_req_interval = floatReqInterval;
+		guard_time = guardTime;
 	}
 	
 	@Override
@@ -114,7 +116,8 @@ public class InfraRouter extends Router implements Generator, PresenceTrace.Hand
 						i.remove();
 					}
 				} else {
-					int n = num_to_push.numToPush(msg, time, infected.size(), present_ids.size() );
+					long push_time = Math.max(msg.creationTime()+guard_time, time);
+					int n = num_to_push.numToPush(msg, push_time, infected.size(), present_ids.size() );
 					n = Math.min(n, sane.size());
 					for(int i=0; i<n; ++i){
 						Integer next = who_to_push.whoToPush(msg,infected, sane);

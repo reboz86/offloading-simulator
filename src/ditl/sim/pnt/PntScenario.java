@@ -27,6 +27,7 @@ public class PntScenario extends WriteApp {
 	protected final static String maxTimeOption = "max-time";
 	protected final static String msgSizeOption = "message-size";
 	protected final static String panicTimeOption = "panic-time";
+	protected final static String guardTimeOption = "guard-time";
 	protected final static String floatIntervalOption = "float-interval";
 	protected final static String seedOption = "seed";
 	protected final static String numInitCopiesOption = "n-init-copies";
@@ -61,6 +62,7 @@ public class PntScenario extends WriteApp {
 	long msgDelay;
 	int bufferSize;
 	long panic_time;
+	long guard_time;
 	Long float_interval;
 	long send_incr;
 	long ctrl_incr;
@@ -124,6 +126,7 @@ public class PntScenario extends WriteApp {
 		msgPeriod *= tps;
 		msgDelay *= tps;
 		panic_time *= tps;
+		guard_time *= tps;
 		send_incr *= tps;
 		ctrl_incr *= tps;
 		if ( float_interval != null )
@@ -183,7 +186,7 @@ public class PntScenario extends WriteApp {
 		}
 		
 		final InfraRouter infra_router = new InfraRouter(infra, who_to_push, num_to_push, send_incr, panic_time, 
-				float_interval, root_id, bufferSize, bufferBus);
+				guard_time, float_interval, root_id, bufferSize, bufferBus);
 		runner.addGenerator(infra_router);
 		presenceBus.addListener(infra_router.presenceListener());
 		presenceEventBus.addListener(infra_router.presenceEventListener());
@@ -249,6 +252,7 @@ public class PntScenario extends WriteApp {
 		options.addOption(null,msgSizeOption,true,"Message size (bytes)");
 		options.addOption(null,seedOption,true,"Seed for the random number generator");
 		options.addOption(null,panicTimeOption,true,"Panic time");
+		options.addOption(null,guardTimeOption,true,"Guard time");
 		options.addOption(null,minTimeOption,true,"Time of first sent message");
 		options.addOption(null,maxTimeOption,true,"Time of last sent message");
 		options.addOption(null,sendIncrOption,true,"Sending increment");
@@ -307,6 +311,7 @@ public class PntScenario extends WriteApp {
 		
 		bufferSize = Integer.parseInt(cli.getOptionValue(bufferSizeOption,"104857600")); // default 100 Mbytes
 		panic_time = Long.parseLong(cli.getOptionValue(panicTimeOption,"11")); // With default parameters, it takes a little over 10 seconds to download a msg from the infrastructure
+		guard_time = Long.parseLong(cli.getOptionValue(guardTimeOption,"1")); // by default, pad with one second
 		send_incr = Long.parseLong(cli.getOptionValue(sendIncrOption, "1")); // by default, try sending every second
 		ctrl_incr = Long.parseLong(cli.getOptionValue(controlIncrOption, "60")); // by default, try sending control messages once per minute
 		if ( cli.hasOption(floatIntervalOption) )
