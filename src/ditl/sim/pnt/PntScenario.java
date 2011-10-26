@@ -126,7 +126,10 @@ public class PntScenario extends WriteApp {
 		
 		msgPeriod *= tps;
 		msgDelay *= tps;
-		panic_time *= tps;
+		if ( infra_only )
+			panic_time = Long.MAX_VALUE; // always panic!
+		else
+			panic_time *= tps;
 		guard_time *= tps;
 		send_incr *= tps;
 		ctrl_incr *= tps;
@@ -142,9 +145,7 @@ public class PntScenario extends WriteApp {
 				guard_time, float_interval, root_id, bufferSize, bufferBus);
 		
 		
-		if ( infra_only ) {
-			panic_time = Long.MAX_VALUE; // always panic!
-		} else { // connect the link events	
+		if ( ! infra_only ) { // connect the link events	
 			linkBus.addListener(adhoc.linkListener());
 			linkEventBus.addListener(adhoc.linkEventListener());
 		
@@ -368,8 +369,8 @@ public class PntScenario extends WriteApp {
 					num_to_push = new DefaultNumToPush();
 				}
 			}
+			
 		}
-		
 	}
 	
 	@Override
