@@ -6,7 +6,8 @@ import java.util.Arrays;
 import org.apache.commons.cli.*;
 
 import ditl.*;
-import ditl.Store.*;
+import ditl.Store.LoadTraceException;
+import ditl.Store.NoSuchTraceException;
 import ditl.WritableStore.AlreadyExistsException;
 import ditl.cli.*;
 import ditl.graphs.*;
@@ -66,7 +67,7 @@ public class PntScenario extends WriteApp {
 	Long float_interval;
 	long send_incr;
 	long ctrl_incr;
-	long ds_shift;
+	//long ds_shift;
 	Store orig_store;
 	String[] store_names;
 	NumToPush num_to_push;
@@ -135,6 +136,12 @@ public class PntScenario extends WriteApp {
 		min_time = (min_time != null)? min_time * tps : presence.minTime();
 		max_time = (max_time != null)? max_time * tps : presence.maxTime();
 		
+		final Router infra_router = (ds_oracle)? 
+				new OracleInfraRouter(infra, panic_time, root_id, bufferSize, bufferBus) :
+				new InfraRouter(infra, who_to_push, num_to_push, send_incr, panic_time, 
+				guard_time, float_interval, root_id, bufferSize, bufferBus);
+		
+		
 		if ( infra_only ) {
 			panic_time = Long.MAX_VALUE; // always panic!
 		} else { // connect the link events	
@@ -142,15 +149,14 @@ public class PntScenario extends WriteApp {
 			linkEventBus.addListener(adhoc.linkEventListener());
 		
 			if ( ds_oracle ){
-				ds_shift *= tps;
 				GroupTrace ds_trace = (GroupTrace)orig_store.getTrace(graph_options.get(GraphOptions.GROUPS));
-				StatefulReader<GroupEvent,Group> ds_reader = ds_trace.getReader(Trace.defaultPriority, ds_shift);
+				StatefulReader<GroupEvent,Group> ds_reader = ds_trace.getReader(Integer.MAX_VALUE); // this trace must have lower priority than the message generator
 				Bus<Group> groupBus = new Bus<Group>();
 				Bus<GroupEvent> groupEventBus = new Bus<GroupEvent>();
 				ds_reader.setBus(groupEventBus);
 				ds_reader.setStateBus(groupBus);
-				groupBus.addListener(((DominatingSetPusher)who_to_push).groupListener());
-				groupEventBus.addListener(((DominatingSetPusher)who_to_push).groupEventListener());
+				groupBus.addListener(((GroupTrace.Handler)infra_router).groupListener());
+				groupEventBus.addListener(((GroupTrace.Handler)infra_router).groupEventListener());
 				runner.addGenerator(ds_reader);
 			}
 			
@@ -185,11 +191,9 @@ public class PntScenario extends WriteApp {
 			}
 		}
 		
-		final InfraRouter infra_router = new InfraRouter(infra, who_to_push, num_to_push, send_incr, panic_time, 
-				guard_time, float_interval, root_id, bufferSize, bufferBus);
-		runner.addGenerator(infra_router);
-		presenceBus.addListener(infra_router.presenceListener());
-		presenceEventBus.addListener(infra_router.presenceEventListener());
+		runner.addGenerator((Generator)infra_router);
+		presenceBus.addListener(((PresenceTrace.Handler)infra_router).presenceListener());
+		presenceEventBus.addListener(((PresenceTrace.Handler)infra_router).presenceEventListener());
 		
 		MessageGenerator msgGenerator = new MessageGenerator(msgPeriod,msgPeriod,msgDelay,msgDelay, 
 				new MessageFactory<BroadcastMessage>(msgSize, msgSize){
@@ -257,7 +261,7 @@ public class PntScenario extends WriteApp {
 		options.addOption(null,maxTimeOption,true,"Time of last sent message");
 		options.addOption(null,sendIncrOption,true,"Sending increment");
 		options.addOption(null,controlIncrOption,true,"Sending increment for control messages");
-		options.addOption(null,dsOption,true,"Use dominating set oracle");
+		options.addOption(null,dsOption,false,"Use dominating set oracle");
 		options.addOption(null, infraOnlyOption, false, "Only use infra");
 		options.addOption(null, floatIntervalOption, true, "Force push in node present for more than <arg> seconds");
 		OptionGroup whoGroup = new OptionGroup();
@@ -321,12 +325,7 @@ public class PntScenario extends WriteApp {
 		
 		if ( ! infra_only ){
 			ds_oracle = cli.hasOption(dsOption);
-			if ( ds_oracle ){
-				ds_shift = Long.parseLong(cli.getOptionValue(dsOption));
-				DominatingSetPusher ds = new DominatingSetPusher();
-				who_to_push = ds;
-				num_to_push = ds;
-			} else {
+			if ( ! ds_oracle ){
 				// parse who to push
 				if ( cli.hasOption(randomPushOption) ){
 					who_to_push = new RandomWho();

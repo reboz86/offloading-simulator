@@ -77,7 +77,7 @@ public class PervasiveInfraRadio extends Radio implements PresenceTrace.Handler 
 					}
 				});
 				aborted_transfers.add(transfer);
-				stopTransfer(time, event.transfer());
+				stopTransfer(time, transfer);
 			}
 		}
 		
@@ -156,9 +156,11 @@ public class PervasiveInfraRadio extends Radio implements PresenceTrace.Handler 
 	protected void tryStartNewPushDown(long time, Integer id){
 		Router root = _world.getRouterById(root_id);
 		Router r = _world.getRouterById(id);
-		TransferOpportunity opp = root.getBestTransferTo(time, this, r);
-		if ( opp != null )
-			startNewTransfer(time, opp);
+		if ( r != null ){
+			TransferOpportunity opp = root.getBestTransferTo(time, this, r);
+			if ( opp != null )
+				startNewTransfer(time, opp);
+		}
 	}
 	
 	public Router root(){

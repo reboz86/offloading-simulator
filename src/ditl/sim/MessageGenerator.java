@@ -61,8 +61,7 @@ public class MessageGenerator extends Bus<MessageEvent> implements Generator, Li
 
 	@Override
 	public int priority() {
-		// TODO check!
-		return Integer.MAX_VALUE; // lowest priority
+		return 500; // lower than presence, links, etc..
 	}
 
 	@Override

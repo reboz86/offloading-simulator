@@ -8,10 +8,10 @@ public class PntRouterFactory implements RouterFactory {
 	private final AdHocRadio adhoc_radio;
 	private final PervasiveInfraRadio infra_radio;
 	private final Bus<BufferEvent> _bus;
-	private final InfraRouter infra_router;
+	private final Router infra_router;
 	private final int buffer_size;
 	
-	public PntRouterFactory(InfraRouter infraRouter, PervasiveInfraRadio infraRadio, 
+	public PntRouterFactory(Router infraRouter, PervasiveInfraRadio infraRadio, 
 			AdHocRadio adhocRadio, int bufferSize, Bus<BufferEvent> bus){
 		adhoc_radio = adhocRadio;
 		infra_router = infraRouter;
