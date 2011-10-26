@@ -11,14 +11,11 @@ public class ConnectedComponentWho extends DefaultWhoToPush
 
 	private Map<Integer,Set<Integer>> _neighbors = new HashMap<Integer,Set<Integer>>();;
 	private List<Set<Integer>> _ccs;
-	private boolean _dorecalc = true;
-	
+	private Set<Integer> present = new HashSet<Integer>();
 	
 	@Override
 	public Integer whoToPush(Message msg, Set<Integer> infected, Set<Integer> sane){
-		if ( _dorecalc ){
-			recalc();
-		}
+		recalc();
 		int sizeSane = 0;
 		int sizeInf = 0;
 		Set<Integer> bestSane, bestInf, cc;
@@ -53,31 +50,39 @@ public class ConnectedComponentWho extends DefaultWhoToPush
 			if ( msg instanceof NeighborsMessage ){
 				Integer from_id = transfer.from().id();
 				Set<Integer> neighbs = ((NeighborsMessage)msg).neighbors();
-				updateNode(from_id, neighbs);
+				if ( neighbs != null )
+					updateNode(from_id, neighbs);
+				else
+					updateNode(from_id, Collections.<Integer>emptySet());
 			}
 		}
 	}
 
 	private void addNode(Integer from) {
-		_neighbors.put(from, new HashSet<Integer>() );
+		if ( ! from.equals(PntScenario.root_id))
+			present.add(from);
 	}
 
 	private void removeNode(Integer from) {
-		_neighbors.remove(from);
+		present.remove(from);
 	}
 	
 	private void updateNode(Integer from, Set<Integer> neighbors){
 		_neighbors.put(from, neighbors);
-		_dorecalc = true;
 	}
 	
 	private void recalc(){
-		LinkedList<Integer> toVisit = new LinkedList<Integer>(_neighbors.keySet());
+		Set<Integer> toVisit = new HashSet<Integer>(present);
 		_ccs = new LinkedList<Set<Integer>>();
 		while( ! toVisit.isEmpty() ){
 			LinkedList<Integer> inCC = new LinkedList<Integer>();
 			Set<Integer> curCC = new HashSet<Integer>();
-			Integer i = toVisit.pop();
+			Integer i = null;
+			for ( Integer k : toVisit ){
+				i = k;
+				toVisit.remove(k);
+				break;
+			}
 			inCC.add(i);
 			while( ! inCC.isEmpty() ){
 				i = inCC.pop();
@@ -94,7 +99,6 @@ public class ConnectedComponentWho extends DefaultWhoToPush
 			}
 			_ccs.add(curCC);
 		}
-		_dorecalc = false;
 	}
 
 	@Override
@@ -118,9 +122,8 @@ public class ConnectedComponentWho extends DefaultWhoToPush
 		return new Listener<Presence>(){
 			@Override
 			public void handle(long time, Collection<Presence> events) {
-				for ( Presence p : events ){
+				for ( Presence p : events )
 					addNode(p.id());
-				}
 			}
 		};
 	}

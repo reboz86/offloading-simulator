@@ -22,7 +22,7 @@ public class GPSWho extends DefaultWhoToPush
 	private double _minY = Double.MAX_VALUE;
 	private double _maxY = Double.MIN_VALUE;
 	
-	public static int MAX_RECURSION = 5;
+	public static int MAX_RECURSION = 10;
 	
 	protected double dist2(Point c1, Point c2){
 		return (c1.x-c2.x)*(c1.x-c2.x)+(c1.y-c2.y)*(c1.y-c2.y);

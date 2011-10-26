@@ -28,9 +28,12 @@ public class GPSDensity extends GPSWho {
 				if ( zone._coords == null ){ // singleton
 					sc.score = 1.0 / zone._area;
 				} else {
-					Set<Integer> saneNodes = new HashSet<Integer>(zone._coords.keySet());
-					saneNodes.removeAll(infected);
-					sc.score = (double)saneNodes.size() / zone._area;
+					int n_sane = 0;
+					for ( Integer k : zone._coords.keySet() ){
+						if ( ! infected.contains(k) )
+							n_sane++;
+					}
+					sc.score = (double)n_sane / zone._area;
 				}
 				scores.add(sc);
 				totalScore += sc.score;
