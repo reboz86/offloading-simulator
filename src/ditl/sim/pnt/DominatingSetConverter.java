@@ -126,7 +126,7 @@ public class DominatingSetConverter extends Bus<Object> implements
 		for ( Group g : ds_writer.states() ){
 			return g.members();
 		}
-		return null; // should never get here
+		return null;
 	}
 	
 	@Override
@@ -137,13 +137,10 @@ public class DominatingSetConverter extends Bus<Object> implements
 			purgeBeforeTime(t, departures); // remove those that departed a time periods ago
 			purgeBeforeTime(t, arrivals);
 			Set<Integer> ds = new DSCalculator().calculateNewDS();
-			if ( t == _ccs.minTime() ){ // this should be the initial state  
-				ds_writer.setInitState(min_time, Collections.singleton(new Group(ds_gid, ds)));
-			} else {
-				if ( ds_writer.states().isEmpty() )
-					ds_writer.append(t, new GroupEvent(ds_gid, GroupEvent.NEW));
-				Set<Integer> prev_ds_nodes = curDSNodes();
-				Set<Integer> joining = new HashSet<Integer>();
+			
+			Set<Integer> prev_ds_nodes = curDSNodes();
+			Set<Integer> joining = new HashSet<Integer>();
+			if ( prev_ds_nodes != null ){
 				for ( Integer i : ds )
 					if ( ! prev_ds_nodes.contains(i) )					
 						joining.add(i);
@@ -151,28 +148,36 @@ public class DominatingSetConverter extends Bus<Object> implements
 				for ( Integer i : prev_ds_nodes )
 					if ( ! ds.contains(i) )					
 						leaving.add(i);
-						
+					
 				if ( ! leaving.isEmpty() )
 					ds_writer.queue(t, new GroupEvent(ds_gid, GroupEvent.LEAVE, leaving));
-										
-				// handle new ds nodes that arrive or leave during the time period
-				for ( Iterator<Integer> i=joining.iterator(); i.hasNext(); ){
-					Integer k = i.next();
-					Long arr_time = arrivals.get(k);
-					Long dep_time = departures.get(k);
-					if ( arr_time != null ){ // node was present at beginning of time period
-						ds_writer.queue(arr_time, new GroupEvent(ds_gid, GroupEvent.JOIN, new Integer[]{k}));
-						i.remove();
-					}
-					if ( dep_time != null ){ // node left during the time period
-						ds_writer.queue(dep_time, new GroupEvent(ds_gid, GroupEvent.LEAVE, new Integer[]{k}));
-					}
+			} else {
+				joining.addAll(ds);
+			}
+									
+			// handle new ds nodes that arrive or leave during the time period
+			for ( Iterator<Integer> i=joining.iterator(); i.hasNext(); ){
+				Integer k = i.next();
+				Long arr_time = arrivals.get(k);
+				Long dep_time = departures.get(k);
+				if ( arr_time != null ){ // node was present at beginning of time period
+					ds_writer.queue(arr_time, new GroupEvent(ds_gid, GroupEvent.JOIN, new Integer[]{k}));
+					i.remove();
 				}
+				if ( dep_time != null ){ // node left during the time period
+					ds_writer.queue(dep_time, new GroupEvent(ds_gid, GroupEvent.LEAVE, new Integer[]{k}));
+				}
+			}
+			
+			if ( t == _ccs.minTime() ){ // this should be the initial state	
+				ds_writer.setInitState(min_time, Collections.singleton(new Group(ds_gid, joining)));
+			} else {
+				if ( ds_writer.states().isEmpty() )
+					ds_writer.append(t, new GroupEvent(ds_gid, GroupEvent.NEW));
 				if ( ! joining.isEmpty() )
 					ds_writer.queue(t, new GroupEvent(ds_gid, GroupEvent.JOIN, joining));
-				
-				ds_writer.flush();
 			}
+			ds_writer.flush();
 		
 			// then clear state and prepare for new dominating set
 			init();
