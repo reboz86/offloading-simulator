@@ -193,8 +193,6 @@ public class PntScenario extends WriteApp {
 		}
 		
 		runner.addGenerator((Generator)infra_router);
-		presenceBus.addListener(((PresenceTrace.Handler)infra_router).presenceListener());
-		presenceEventBus.addListener(((PresenceTrace.Handler)infra_router).presenceEventListener());
 		
 		MessageGenerator msgGenerator = new MessageGenerator(msgPeriod,msgPeriod,msgDelay,msgDelay, 
 				new MessageFactory<BroadcastMessage>(msgSize, msgSize){
@@ -216,6 +214,9 @@ public class PntScenario extends WriteApp {
 		// important to add the infra listener after the world
 		presenceEventBus.addListener(infra.presenceEventListener());
 		presenceBus.addListener(infra.presenceListener());
+		// important at add the infra_router listener after the world
+		presenceBus.addListener(((PresenceTrace.Handler)infra_router).presenceListener());
+		presenceEventBus.addListener(((PresenceTrace.Handler)infra_router).presenceEventListener());
 		
 		
 		MessageTrace messages = (MessageTrace)_store.newTrace("messages", MessageTrace.type, force);
