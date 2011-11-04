@@ -34,7 +34,7 @@ import ditl.graphs.cli.GraphOptions;
 import ditl.transfers.*;
 
 public class InfectionReport extends Report 
-	implements PresenceTrace.Handler, BufferTrace.Handler, MessageTrace.Handler {
+	implements PresenceTrace.Handler, BufferTrace.Handler, MessageTrace.Handler, Listener<Object>, Generator {
 
 	private Integer msg_id;
 	private int infected = 0;
@@ -42,11 +42,17 @@ public class InfectionReport extends Report
 	private long shift_time;
 	private Set<Integer> infected_ids = new HashSet<Integer>();
 	private boolean do_update = false;
+	private Bus<Object> update_bus = new Bus<Object>();
 	
 	public InfectionReport(OutputStream out, Integer msgId, long shiftTime) throws IOException {
 		super(out);
 		msg_id = msgId;
 		shift_time = shiftTime;
+		update_bus.addListener(this);
+	}
+	
+	private void queueUpdate(long time){
+		update_bus.queue(time, Collections.emptySet());
 	}
 
 	public Listener<BufferEvent> bufferEventListener() {
@@ -62,7 +68,7 @@ public class InfectionReport extends Report
 						}
 					}
 				}
-				update(time);
+				queueUpdate(time);
 			}
 		};
 	}
@@ -87,7 +93,7 @@ public class InfectionReport extends Report
 						if ( infected_ids.contains(pev.id()))
 							infected -=1;
 					}
-					update(time);
+					queueUpdate(time);
 				}
 			}
 		};
@@ -99,18 +105,10 @@ public class InfectionReport extends Report
 			@Override
 			public void handle(long time, Collection<Presence> events) throws IOException {
 				present = events.size();
-				update(time);
+				queueUpdate(time);
 			}
 		};
 	}
-	
-	private void update(long time) throws IOException {
-		if ( do_update ){
-			double r = (double)infected/(double)present;
-			append((time-shift_time)+" "+r);
-		}
-	}
-
 	
 	public static void main(String args[]) throws IOException{
 		App app = new ExportApp(){
@@ -162,6 +160,7 @@ public class InfectionReport extends Report
 				runner.addGenerator(bufferReader);
 				runner.addGenerator(presenceReader);
 				runner.addGenerator(messageReader);
+				runner.addGenerator(r);
 				
 				runner.run();
 				
@@ -211,5 +210,29 @@ public class InfectionReport extends Report
 	@Override
 	public Listener<Message> messageListener() {
 		return null;
+	}
+	
+	@Override
+	public void handle(long time, Collection<Object> arg1) throws IOException {
+		if ( do_update ){
+			double r = (double)infected/(double)present;
+			append((time-shift_time)+" "+r);
+		}
+	}
+
+	@Override
+	public void incr(long arg0) throws IOException {}
+
+	@Override
+	public void seek(long arg0) throws IOException {}
+
+	@Override
+	public Bus<?>[] busses() {
+		return new Bus<?>[]{update_bus};
+	}
+
+	@Override
+	public int priority() {
+		return Integer.MAX_VALUE;
 	}
 }
