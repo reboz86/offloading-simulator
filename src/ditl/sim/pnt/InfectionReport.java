@@ -29,25 +29,20 @@ import ditl.Store.NoSuchTraceException;
 import ditl.WritableStore.AlreadyExistsException;
 import ditl.Reader;
 import ditl.cli.*;
-import ditl.graphs.*;
 import ditl.graphs.cli.GraphOptions;
 import ditl.transfers.*;
 
 public class InfectionReport extends Report 
-	implements PresenceTrace.Handler, BufferTrace.Handler, MessageTrace.Handler, Listener<Object>, Generator {
+	implements  BufferTrace.Handler,MessageTrace.Handler,  Listener<Object>, Generator {
 
-	private Integer msg_id;
 	private int infected = 0;
 	private int present = 0;
-	private long shift_time;
 	private Set<Integer> infected_ids = new HashSet<Integer>();
-	private boolean do_update = false;
 	private Bus<Object> update_bus = new Bus<Object>();
 	
-	public InfectionReport(OutputStream out, Integer msgId, long shiftTime) throws IOException {
+	public InfectionReport(OutputStream out) throws IOException {
 		super(out);
-		msg_id = msgId;
-		shift_time = shiftTime;
+		System.out.println("InfectionReport");
 		update_bus.addListener(this);
 	}
 	
@@ -62,15 +57,57 @@ public class InfectionReport extends Report
 					throws IOException {
 				for ( BufferEvent event : events ){
 					if ( event.type() == BufferEvent.ADD ){
-						if ( event.msgId().equals(msg_id) && ! event.id().equals(PntScenario.root_id)){
+						if ( ! event.id().equals(PntScenario.root_id)){
 							infected += 1;
 							infected_ids.add(event.id());
 						}
 					}
+					
+					if ( event.type() == BufferEvent.IN ){
+						present += 1;
+						if ( infected_ids.contains(event.id()))
+							infected +=1;
+					}
+					if ( event.type() == BufferEvent.OUT ){
+						if(present > 0)
+							present -= 1;
+						if ( infected_ids.contains(event.id()))
+							infected -=1;
+					}
+					
 				}
 				queueUpdate(time);
 			}
 		};
+	}
+	
+	@Override
+	public Listener<MessageEvent> messageEventListener() {
+		return new Listener<MessageEvent>(){
+
+			@Override
+			public void handle(long time, Collection<MessageEvent> events) throws IOException {
+					for (MessageEvent mev: events){
+						if ( mev.isNew()){
+							// new message
+							infected =0;
+							infected_ids.clear();
+							
+						}else{
+							//queueUpdate(time);
+							
+							
+						}
+					}
+				}
+			
+		};
+	}
+	
+	@Override
+	public Listener<Message> messageListener() {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 	@Override
@@ -78,73 +115,40 @@ public class InfectionReport extends Report
 		return null;
 	}
 
-	@Override
-	public Listener<PresenceEvent> presenceEventListener() {
-		return new Listener<PresenceEvent>(){
-			@Override
-			public void handle(long time, Collection<PresenceEvent> events) throws IOException {
-				for ( PresenceEvent pev : events ){
-					if ( pev.isIn() ){
-						present += 1;
-						if ( infected_ids.contains(pev.id()))
-							infected +=1;
-					} else {
-						present -= 1;
-						if ( infected_ids.contains(pev.id()))
-							infected -=1;
-					}
-					queueUpdate(time);
-				}
-			}
-		};
-	}
-
-	@Override
-	public Listener<Presence> presenceListener() {
-		return new Listener<Presence>(){
-			@Override
-			public void handle(long time, Collection<Presence> events) throws IOException {
-				present = events.size();
-				queueUpdate(time);
-			}
-		};
-	}
 	
 	public static void main(String args[]) throws IOException{
 		App app = new ExportApp(){
 
 			GraphOptions graph_options = new GraphOptions(GraphOptions.PRESENCE);
 			Long min_time, max_time;
-			long shift_time;
-			Integer msg_id;
-			String shiftOption = "time-shift";
 			
 			@Override
 			protected void initOptions() {
 				super.initOptions();
 				graph_options.setOptions(options);
-				options.addOption(null, shiftOption, true, "Shift starting time by <arg>");
 			}
 			
 			@Override
 			protected void run() throws IOException, NoSuchTraceException,
 					AlreadyExistsException, LoadTraceException {
-				PresenceTrace presence = (PresenceTrace)_store.getTrace(graph_options.get(GraphOptions.PRESENCE));
+				
+				System.out.println("run: " + _store.listTraces().toString());
+				//PresenceTrace presence = (PresenceTrace)_store.getTrace(graph_options.get(GraphOptions.PRESENCE));
 				BufferTrace buffers = (BufferTrace)_store.getTrace("buffers");
 				MessageTrace messages = (MessageTrace)_store.getTrace("messages");
-				min_time = presence.minTime();
-				max_time = presence.maxTime();
-				shift_time *= presence.ticsPerSecond();
+				min_time = buffers.minTime();
+				max_time = buffers.maxTime();
 				
-				InfectionReport r = new InfectionReport(System.out, msg_id, shift_time);
+				System.out.println("InfectionReport");
+				InfectionReport r = new InfectionReport(_out);
 				
-				Bus<Presence> presenceBus = new Bus<Presence>();
-				presenceBus.addListener(r.presenceListener());
-				Bus<PresenceEvent> presenceEventBus = new Bus<PresenceEvent>();
-				presenceEventBus.addListener(r.presenceEventListener());
-				StatefulReader<PresenceEvent,Presence> presenceReader = presence.getReader();
-				presenceReader.setBus(presenceEventBus);
-				presenceReader.setStateBus(presenceBus);
+				//Bus<Presence> presenceBus = new Bus<Presence>();
+				//presenceBus.addListener(r.presenceListener());
+				//Bus<PresenceEvent> presenceEventBus = new Bus<PresenceEvent>();
+				//presenceEventBus.addListener(r.presenceEventListener());
+				//StatefulReader<PresenceEvent,Presence> presenceReader = presence.getReader();
+				//presenceReader.setBus(presenceEventBus);
+				//presenceReader.setStateBus(presenceBus);
 				
 				Bus<BufferEvent> bufferEventBus = new Bus<BufferEvent>();
 				bufferEventBus.addListener(r.bufferEventListener());
@@ -158,20 +162,21 @@ public class InfectionReport extends Report
 				
 				Runner runner = new Runner(buffers.maxUpdateInterval(), min_time, max_time);
 				runner.addGenerator(bufferReader);
-				runner.addGenerator(presenceReader);
+				//runner.addGenerator(presenceReader);
 				runner.addGenerator(messageReader);
 				runner.addGenerator(r);
 				
 				runner.run();
 				
 				r.finish();
-				presenceReader.close();
+				//presenceReader.close();
 				bufferReader.close();
+				messageReader.close();
 			}
 			
 			@Override
 			protected String getUsageString(){
-				return "[OPTIONS] STORE MSGID";
+				return "[OPTIONS] STORE";
 			}
 			
 			@Override
@@ -180,8 +185,6 @@ public class InfectionReport extends Report
 					HelpException {
 				super.parseArgs(cli, args);
 				graph_options.parse(cli);
-				msg_id = Integer.parseInt(args[1]);
-				shift_time = Long.parseLong(cli.getOptionValue(shiftOption,"0"));
 			}
 			
 		};
@@ -189,35 +192,33 @@ public class InfectionReport extends Report
 		app.exec();
 	}
 
-	@Override
-	public Listener<MessageEvent> messageEventListener() {
-		return new Listener<MessageEvent>(){
-			@Override
-			public void handle(long time, Collection<MessageEvent> events) {
-				for ( MessageEvent mev : events ){
-					if ( mev.msgId().equals(msg_id) ){
-						if ( mev.isNew() ){
-							do_update = true;
-						} else {
-							do_update = false;
-						}
-					}
-				}
-			}
-		};
-	}
+//	@Override
+//	public Listener<MessageEvent> messageEventListener() {
+//		return new Listener<MessageEvent>(){
+//			@Override
+//			public void handle(long time, Collection<MessageEvent> events) {
+//				for ( MessageEvent mev : events ){
+//					if ( mev.msgId().equals(msg_id) ){
+//						if ( mev.isNew() ){
+//							do_update = true;
+//						} else {
+//							do_update = false;
+//						}
+//					}
+//				}
+//			}
+//		};
+//	}
 
-	@Override
-	public Listener<Message> messageListener() {
-		return null;
-	}
+//	@Override
+//	public Listener<Message> messageListener() {
+//		return null;
+//	}
 	
 	@Override
 	public void handle(long time, Collection<Object> arg1) throws IOException {
-		if ( do_update ){
 			double r = (double)infected/(double)present;
-			append((time-shift_time)+" "+r);
-		}
+			append(time+" "+r);
 	}
 
 	@Override
@@ -235,4 +236,6 @@ public class InfectionReport extends Report
 	public int priority() {
 		return Integer.MAX_VALUE;
 	}
+
+	
 }

@@ -2,6 +2,7 @@ package ditl.sim.pnt;
 
 import java.io.*;
 import java.util.Arrays;
+import java.util.Set;
 
 import org.apache.commons.cli.*;
 
@@ -76,6 +77,7 @@ public class PntScenario extends WriteApp {
 	private boolean infra_only = false;
 	private boolean use_gps = false;
 	private boolean use_cc = false;
+	private long ackSize=256;
 	
 	public final static String PKG_NAME = "pnt";
 	public final static String CMD_NAME = "sim";
@@ -92,6 +94,8 @@ public class PntScenario extends WriteApp {
 		Bus<PresenceEvent> presenceEventBus = new Bus<PresenceEvent>();
 		presenceReader.setBus(presenceEventBus);
 		presenceReader.setStateBus(presenceBus);
+		
+		System.out.println("PntScenario.run: presence:"+presence.ticsPerSecond()+";"+presence.minTime()+";"+presence.maxTime());
 		
 		Runner runner = new Runner(presence.ticsPerSecond(), presence.minTime(), presence.maxTime());
 		
@@ -110,7 +114,7 @@ public class PntScenario extends WriteApp {
 		
 		long tps = presence.ticsPerSecond();
 		
-		World world = new World();
+		final World world = new World();
 		
 		adhoc_bitrate /= 8*tps;
 		AdHocRadio adhoc = new AdHocRadio(world, new ConstantBitrateGenerator(adhoc_bitrate));
@@ -142,7 +146,7 @@ public class PntScenario extends WriteApp {
 		final Router infra_router = (ds_oracle)? 
 				new OracleInfraRouter(infra, panic_time, root_id, bufferSize, bufferBus) :
 				new InfraRouter(infra, who_to_push, num_to_push, send_incr, panic_time, 
-				guard_time, float_interval, root_id, bufferSize, bufferBus);
+				guard_time, float_interval, root_id, bufferSize, bufferBus,-1);
 		
 		
 		if ( ! infra_only ) { // connect the link events	
@@ -194,18 +198,21 @@ public class PntScenario extends WriteApp {
 		
 		runner.addGenerator((Generator)infra_router);
 		
+		world.setInterestProbability(1);
+		
 		MessageGenerator msgGenerator = new MessageGenerator(msgPeriod,msgPeriod,msgDelay,msgDelay, 
 				new MessageFactory<BroadcastMessage>(msgSize, msgSize){
 					@Override
 					public BroadcastMessage getNew(long creationTime, long expirationTime) {
-						return new BroadcastMessage(infra_router, nextBytes(), creationTime, expirationTime);
+						Set<Router> group = world.getRandomRoutersExceptInfra(1);
+						return new BroadcastMessage(infra_router, group, nextBytes(), creationTime, expirationTime);
 					}
 			});
 		msgGenerator.setTimeLimits(min_time, max_time);
 		runner.addGenerator(msgGenerator);
 		
 		
-		PntRouterFactory routerFactory = new PntRouterFactory(infra_router, infra, adhoc, bufferSize, bufferBus);
+		PntRouterFactory routerFactory = new PntRouterFactory(infra_router, infra, adhoc, bufferSize, bufferBus,null,ackSize,"ACCEPT_ALL");
 		
 		world.setRouterFactory(routerFactory);
 		presenceBus.addListener(world.presenceListener());
@@ -218,7 +225,7 @@ public class PntScenario extends WriteApp {
 		presenceBus.addListener(((PresenceTrace.Handler)infra_router).presenceListener());
 		presenceEventBus.addListener(((PresenceTrace.Handler)infra_router).presenceEventListener());
 		
-		
+		System.out.println("b");
 		MessageTrace messages = (MessageTrace)_store.newTrace("messages", MessageTrace.type, force);
 		BufferTrace buffers = (BufferTrace)_store.newTrace("buffers", BufferTrace.type, force);
 		TransferTrace adhoc_transfers = (TransferTrace)_store.newTrace("adhoc_transfers", TransferTrace.type, force);
@@ -227,7 +234,7 @@ public class PntScenario extends WriteApp {
 		BufferEventLogger bufferLogger = new BufferEventLogger(buffers.getWriter(links.snapshotInterval()));
 		TransferEventLogger adhocTransferLogger = new TransferEventLogger(adhoc_transfers.getWriter(links.snapshotInterval()));
 		TransferEventLogger infraTransferLogger = new TransferEventLogger(infra_transfers.getWriter(links.snapshotInterval()));
-		
+		System.out.println("a");
 		msgGenerator.addListener(msgLogger);
 		bufferBus.addListener(bufferLogger);
 		presenceBus.addListener(bufferLogger.presenceListener());
@@ -237,6 +244,7 @@ public class PntScenario extends WriteApp {
 		
 		msgGenerator.addListener(world);
 		
+		System.out.println("PntScenario.run: Runner.run");
 		runner.run();
 		
 		msgLogger.close();
@@ -316,7 +324,7 @@ public class PntScenario extends WriteApp {
 			max_time = Long.parseLong(cli.getOptionValue(maxTimeOption) );
 		
 		bufferSize = Integer.parseInt(cli.getOptionValue(bufferSizeOption,"104857600")); // default 100 Mbytes
-		panic_time = Long.parseLong(cli.getOptionValue(panicTimeOption,"11")); // With default parameters, it takes a little over 10 seconds to download a msg from the infrastructure
+		panic_time = Long.parseLong(cli.getOptionValue(panicTimeOption,"11")); // With default parameters, it takes a little more than 10 seconds to download a msg from the infrastructure
 		guard_time = Long.parseLong(cli.getOptionValue(guardTimeOption,"1")); // by default, pad with one second
 		send_incr = Long.parseLong(cli.getOptionValue(sendIncrOption, "1")); // by default, try sending every second
 		ctrl_incr = Long.parseLong(cli.getOptionValue(controlIncrOption, "60")); // by default, try sending control messages once per minute

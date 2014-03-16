@@ -8,7 +8,9 @@ import ditl.graphs.*;
 
 public class AdHocRadio extends Radio implements LinkTrace.Handler, Listener<TransferEvent> {
 	
-	private AdjacencyMatrix adjacency = new AdjacencyMatrix();
+	private static final boolean D=false;
+	
+	private AdjacencySet.Links adjacency = new AdjacencySet.Links();;
 	private Map<Link,Transfer> active_transfers = new HashMap<Link,Transfer>();
 	private Set<Integer> active_node_ids = new HashSet<Integer>();
 	private BitrateGenerator bitrate_generator;
@@ -27,7 +29,7 @@ public class AdHocRadio extends Radio implements LinkTrace.Handler, Listener<Tra
 
 	@Override
 	public int priority() {
-		return Trace.defaultPriority;
+		return Trace.defaultPriority+1;  // less priority than Infra
 	}
 
 	@Override
@@ -58,7 +60,11 @@ public class AdHocRadio extends Radio implements LinkTrace.Handler, Listener<Tra
 					throws IOException {
 				adj_listener.handle(time, events);
 				Set<Integer> new_nodes_can_transmit = new HashSet<Integer>();
+				
+				
 				for ( LinkEvent lev : events ){
+					
+					if (D) System.out.println(" AdHocRadio.linkEventListener.handle:"+lev.toString());
 					Link l = lev.link();
 					if ( lev.isUp() ){
 						if ( canTransmit(l.id1()) && canTransmit(l.id2()) ){
@@ -86,11 +92,26 @@ public class AdHocRadio extends Radio implements LinkTrace.Handler, Listener<Tra
 	protected void tryStartNewTransfer(long time, Set<Integer> can_transmit){
 		while ( ! can_transmit.isEmpty() ){
 			Integer id = popRandomId(can_transmit);
+			if (D ) System.out.println(" AdHocRadio.tryStartNewTransfer:"+id);
 			Router r = _world.getRouterById(id);
-			TransferOpportunity opp = r.getBestTransferOpportunity(time, this);
-			if ( opp != null ){
-				startNewTransfer(time, opp);
-				updateCanTransmit(can_transmit);
+			try{
+				TransferOpportunity opp = r.getBestTransferOpportunity(time, this);
+				if ( opp != null ){
+					if(r instanceof AdHocSprayRouter){
+						if(((AdHocSprayRouter) r).sendIfPossible(opp.message())){
+							if(D) System.out.println(r._id+" send to "+opp.to()+ " msg: "+opp.message().msgId());
+							startNewTransfer(time, opp);
+							updateCanTransmit(can_transmit);
+						}
+					}else{
+						startNewTransfer(time, opp);
+						updateCanTransmit(can_transmit);
+					}
+
+				}
+			}catch (NullPointerException e){
+				if (D)System.out.println(" AdHocRadio NullPointerException: "+ id+";"+time);
+				break;
 			}
 		}
 	}
@@ -185,6 +206,7 @@ public class AdHocRadio extends Radio implements LinkTrace.Handler, Listener<Tra
 		for ( TransferEvent event : events ){
 			final Transfer transfer = event.transfer();
 			if ( event.type() == TransferEvent.ABORT ){
+				//if (D ) System.out.println("AdHocRadio.handle: ABORT "+time+";"+event.transfer().message().msgId()+";"+event.transfer().to().id());
 				removeFromQueueAfterTime(time, new Matcher<TransferEvent>(){
 					@Override
 					public boolean matches(TransferEvent event) {
@@ -198,6 +220,7 @@ public class AdHocRadio extends Radio implements LinkTrace.Handler, Listener<Tra
 		
 		for ( TransferEvent event : events ){
 			if ( event.type() == TransferEvent.COMPLETE ){
+				if (D && event.transfer().message().msgId()<3) System.out.println("AdHocRadio.handle: COMPLETE "+time+";"+event.transfer().message().msgId()+";"+event.transfer().from().id()+";"+event.transfer().to().id());
 				Transfer transfer2 = event.transfer();
 				if ( ! aborted_transfers.contains(transfer2) ){
 					transfer2.complete(time);

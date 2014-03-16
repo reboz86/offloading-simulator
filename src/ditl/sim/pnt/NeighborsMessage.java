@@ -9,7 +9,7 @@ public class NeighborsMessage extends ControlMessage {
 	private Set<Integer> _neighbors;
 	
 	public NeighborsMessage(Router from, Router to, long creationTime, Set<Integer> neighbors) {
-		super(from, to, creationTime);
+		super(from, to, creationTime,256);
 		_neighbors = neighbors;
 	}
 

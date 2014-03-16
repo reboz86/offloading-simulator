@@ -8,7 +8,7 @@ public class GPSMessage extends ControlMessage {
 	private final Point _pos;
 	
 	public GPSMessage(Router from, Router to, long creationTime, Point pos){
-		super(from, to, creationTime);
+		super(from, to, creationTime,256);
 		_pos = pos;
 	}
 	

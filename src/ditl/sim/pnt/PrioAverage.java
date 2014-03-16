@@ -11,6 +11,7 @@ public class PrioAverage extends ArrivalWho {
 		long avg = getAverageArrival();
 		long bestInt = Long.MAX_VALUE;
 		long closestTime = Long.MIN_VALUE;
+		
 		for( Integer i : sane ){
 			if ( Math.abs(_arrivalTimes.get(i)-avg) < bestInt ){
 				closestTime = _arrivalTimes.get(i);

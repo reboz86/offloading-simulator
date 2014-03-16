@@ -30,12 +30,12 @@ public class TransferOpportunity implements Comparable<TransferOpportunity> {
 
 	@Override
 	public int compareTo(TransferOpportunity t) {
-		if ( _msg instanceof UnicastMessage ){
+		if ( _msg instanceof UnicastMessage ){ // Unicast
 			if ( t._msg instanceof UnicastMessage )
 				return nearestExpirationTime(t._msg);
 			else
 				return 1;
-		} else if ( _msg instanceof MulticastMessage ){
+		} else if ( _msg instanceof MulticastMessage ){// Multicast
 			if ( t._msg instanceof UnicastMessage )
 				return -1;
 			else if ( t._msg instanceof MulticastMessage )
@@ -54,4 +54,5 @@ public class TransferOpportunity implements Comparable<TransferOpportunity> {
 		Long t2 = msg.expirationTime();
 		return t1.compareTo(t2);
 	}
+	
 }

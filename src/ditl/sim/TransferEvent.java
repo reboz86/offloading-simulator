@@ -1,5 +1,7 @@
 package ditl.sim;
 
+import com.sun.org.apache.xml.internal.serializer.ToStream;
+
 
 public class TransferEvent {
 	
@@ -32,5 +34,10 @@ public class TransferEvent {
 	
 	public Transfer transfer(){
 		return _transfer;
+	}
+	
+	public String toString(){
+		return new String("Type: "+_type);
+		
 	}
 }

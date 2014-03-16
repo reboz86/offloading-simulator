@@ -6,6 +6,8 @@ import ditl.graphs.Link;
 
 public class Transfer {
 	
+	private static final boolean D=true;
+	
 	private double _bitrate;
 	private long start_time;
 	private Message _msg;

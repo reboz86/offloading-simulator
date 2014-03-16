@@ -1,10 +1,13 @@
 package ditl.sim;
 
+import java.util.Set;
+
 
 public class BroadcastMessage extends Message {
 	
-	public BroadcastMessage(Router from, long bytes, long creationTime, long expirationTime) {
+	public BroadcastMessage(Router from, Set<Router> group,long bytes, long creationTime, long expirationTime) {
 		super(from, bytes, creationTime, expirationTime);
+		setRecipients(group);
 	}
 
 	@Override
@@ -21,7 +24,13 @@ public class BroadcastMessage extends Message {
 		@Override
 		public BroadcastMessage getNew(long creationTime, long expirationTime) {
 			Router from = _world.getRandomRouter();
-			return new BroadcastMessage(from, nextBytes(), creationTime, expirationTime);
+			Set<Router> group = _world.getRandomRouters(1);
+			group.remove(from);
+			return new BroadcastMessage(from, group, nextBytes(), creationTime, expirationTime);
+		}
+		@Override
+		public Set<Router> defineMessageRecipients() {
+			return _world.getRandomRouters(1);
 		}
 	}
 

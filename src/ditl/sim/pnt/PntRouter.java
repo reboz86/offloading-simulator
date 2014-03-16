@@ -10,18 +10,21 @@ public class PntRouter extends AdHocRouter {
 
 	protected PervasiveInfraRadio infra_radio;
 	protected LinkedList<ControlMessage> upload_buffer = new LinkedList<ControlMessage>();
+	private long ackSize;
 	
 	public PntRouter(AdHocRadio adhocRadio, PervasiveInfraRadio infraRadio, 
-			Integer id, int bufferSize, Bus<BufferEvent> bus) {
-		super(adhocRadio, id, bufferSize, bus);
+			Integer id, int bufferSize, Bus<BufferEvent> bus,long ackSize, String strategy) {
+		super(adhocRadio, id, bufferSize, bus,strategy);
 		infra_radio = infraRadio;
+		this.ackSize=ackSize;
+		
 	}
 	
 	@Override
 	protected void receiveMessage(long time, Message msg, Radio radio) throws IOException {
 		super.receiveMessage(time, msg, radio);
 		if ( radio == adhoc_radio ){ // prepare ack
-			queue(time, new AckMessage(this, infra_radio.root(), time, msg.msgId()));
+			queue(time, new AckMessage(this, infra_radio.root(), time, msg.msgId(),ackSize));
 			trySendControlImmediately(time);
 		} else { // try to send over ad hoc radio
 			tryRelayImmediately(time);

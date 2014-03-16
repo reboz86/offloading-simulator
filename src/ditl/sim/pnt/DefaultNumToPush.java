@@ -6,7 +6,7 @@ public class DefaultNumToPush implements NumToPush {
 	
 	@Override
 	public int numToPush(Message msg, double curTime, int nInfected, int nTotal ){
-		return 0;
+		return 1;
 	}
 	
 	@Override

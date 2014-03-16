@@ -9,13 +9,13 @@ import ditl.sim.*;
 
 public class ReachableLeader extends PanicLeader {
 	
-	protected AdjacencyMatrix _adjacency;
+	protected AdjacencySet.Edges _adjacency;
 	protected Map<Message,Set<Integer>> msg_dominating_sets = new HashMap<Message,Set<Integer>>();
 
 	public ReachableLeader(AdHocRadio adhocRadio, AdHocRadio vhfData,
 			AdHocRadio vhfControl, Integer id, Integer gid, int bufferSize, long guardTime,
 			Bus<BufferEvent> bus, Map<Integer, Leader> leaders,
-			PanicBus panicBus, long panicTime, AdjacencyMatrix adjacency) {
+			PanicBus panicBus, long panicTime, AdjacencySet.Edges adjacency) {
 		super(adhocRadio, vhfData, vhfControl, id, gid, bufferSize, guardTime, bus, leaders,
 				panicBus, panicTime);
 		_adjacency = adjacency;
@@ -38,7 +38,7 @@ public class ReachableLeader extends PanicLeader {
 		Set<Integer> dominating = new HashSet<Integer>(_leaders.keySet());
 		Map<Integer,Set<Integer>> sets = new HashMap<Integer,Set<Integer>>();
 		// copy over adjacency data
-		for ( Integer node : _adjacency.nodes() )
+		for ( Integer node : _adjacency.vertices() )
 			sets.put(node, new HashSet<Integer>(_adjacency.getNext(node)));
 		// remove all nodes that I can directly reach
 		Set<Integer> i_can_reach = sets.remove(_id);

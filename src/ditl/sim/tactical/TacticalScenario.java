@@ -10,6 +10,7 @@ import ditl.Store.*;
 import ditl.WritableStore.AlreadyExistsException;
 import ditl.cli.*;
 import ditl.graphs.*;
+import ditl.graphs.AdjacencySet;
 import ditl.graphs.cli.GraphOptions;
 import ditl.sim.*;
 import ditl.sim.BufferEvent;
@@ -146,7 +147,7 @@ public class TacticalScenario extends WriteApp {
 			StatefulReader<EdgeEvent,Edge> reachableReader = reachable.getReader();
 			Bus<EdgeEvent> reachableEventBus = new Bus<EdgeEvent>();
 			Bus<Edge> reachableBus = new Bus<Edge>();
-			AdjacencyMatrix adjacency = new AdjacencyMatrix();
+			AdjacencySet.Edges adjacency = new AdjacencySet.Edges();
 			reachableEventBus.addListener(adjacency.edgeEventListener());
 			reachableBus.addListener(adjacency.edgeListener());
 			reachableReader.setBus(reachableEventBus);
@@ -168,7 +169,7 @@ public class TacticalScenario extends WriteApp {
 			routerFactory = new TacticalRouterFactory(groups, bufferBus, uhf, vhf_data, vhf_control, bufferSize, guard_time);
 		}
 		
-		world.setRouterFactory(routerFactory);
+		//world.setRouterFactory(routerFactory);
 		presenceBus.addListener(world.presenceListener());
 		presenceEventBus.addListener(world.presenceEventListener());
 		

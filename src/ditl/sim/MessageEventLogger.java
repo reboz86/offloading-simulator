@@ -21,7 +21,7 @@ public class MessageEventLogger implements Logger<ditl.sim.MessageEvent> {
 			MessageEvent mev;
 			Integer msgId = event.message().msgId();
 			if ( event.isNew() )
-				mev = new MessageEvent(msgId, MessageEvent.NEW);
+				mev = new MessageEvent(msgId, MessageEvent.NEW, event.size());
 			else
 				mev = new MessageEvent(msgId, MessageEvent.EXPIRE);
 			message_writer.append(time, mev);

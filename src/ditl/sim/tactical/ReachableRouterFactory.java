@@ -9,12 +9,12 @@ import ditl.sim.*;
 
 public class ReachableRouterFactory extends PanicRouterFactory {
 
-	protected AdjacencyMatrix _adjacency;
+	protected AdjacencySet.Edges _adjacency;
 
 	public ReachableRouterFactory(Set<Group> groups,
 			Bus<BufferEvent> bufferBus, AdHocRadio uhf, AdHocRadio vhfData,
 			AdHocRadio vhfControl, int bufferSize, long guardTime,
-			PanicBus panicBus, long panicTime, AdjacencyMatrix adjacency) throws IOException {
+			PanicBus panicBus, long panicTime, AdjacencySet.Edges adjacency) throws IOException {
 		
 		_adjacency = adjacency;
 		panic_bus = panicBus;

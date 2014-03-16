@@ -6,8 +6,8 @@ public class AckMessage extends ControlMessage {
 
 	private final Integer acked_msg_id;
 	
-	public AckMessage(Router from, Router to, long creationTime, Integer msgId){
-		super(from, to, creationTime);
+	public AckMessage(Router from, Router to, long creationTime, Integer msgId,long ackSize){
+		super(from, to, creationTime,ackSize);
 		acked_msg_id = msgId;
 	}
 	

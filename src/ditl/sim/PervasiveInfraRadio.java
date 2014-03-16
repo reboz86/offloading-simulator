@@ -8,6 +8,8 @@ import ditl.graphs.*;
 
 public class PervasiveInfraRadio extends Radio implements PresenceTrace.Handler {
 	
+	private final static boolean D=false;
+	
 	private Set<Integer> present_node_ids = new HashSet<Integer>();
 	private Map<Integer,Transfer> active_uploads = new HashMap<Integer,Transfer>();
 	private Map<Integer,Transfer> active_downloads = new HashMap<Integer,Transfer>();
@@ -33,13 +35,17 @@ public class PervasiveInfraRadio extends Radio implements PresenceTrace.Handler 
 		return ! active_downloads.containsKey(id);
 	}
 
+	//called by InfraRouter.tryPush()
 	@Override
 	public void startNewTransfer(long time, TransferOpportunity opp) {
+		if (D && opp.message().msgId()<3) System.out.println("PervasiveInfraRadio.startNewTransfer:"+time+";"+opp.message().msgId()+";"+opp.from().id()+";"+opp.to().id());
 		Transfer transfer = null;
 		if ( opp.from().id().equals(root_id) ){ // down
+			if (D && opp.message().msgId()<3) System.out.println("	Down :"+opp.from().id()+";"+opp.to().id());
 			transfer = opp.toTransfer(this, time, down_bitrate_generator.getNext());
 			active_downloads.put(opp.to().id(), transfer);
 		} else { // up
+			//if (D) System.out.println("	Up :"+opp.from().id()+";"+opp.to().id());
 			transfer = opp.toTransfer(this, time, up_bitrate_generator.getNext());
 			active_uploads.put(opp.to().id(), transfer);
 		}
@@ -55,7 +61,7 @@ public class PervasiveInfraRadio extends Radio implements PresenceTrace.Handler 
 
 	@Override
 	public int priority() {
-		return Trace.defaultPriority;
+		return Trace.defaultPriority; 
 	}
 
 	@Override
@@ -66,10 +72,13 @@ public class PervasiveInfraRadio extends Radio implements PresenceTrace.Handler 
 
 	@Override
 	public void handle(long time, Collection<TransferEvent> events) throws IOException {
+		
 		Set<Transfer> aborted_transfers = new HashSet<Transfer>();
 		for ( TransferEvent event : events ){
+			//if (D && event.transfer().message().msgId()<1) System.out.println("	event:"+event.toString());
 			final Transfer transfer = event.transfer();
 			if ( event.type() == TransferEvent.ABORT ){
+				//if (D ) System.out.println("PervasiveInfraRadio.handle: ABORT "+time+";"+event.transfer().message().msgId()+";"+event.transfer().to().id());
 				removeFromQueueAfterTime(time, new Matcher<TransferEvent>(){
 					@Override
 					public boolean matches(TransferEvent event) {
@@ -83,6 +92,7 @@ public class PervasiveInfraRadio extends Radio implements PresenceTrace.Handler 
 		
 		for ( TransferEvent event : events ){
 			if ( event.type() == TransferEvent.COMPLETE ){
+				if (D && event.transfer().message().msgId()<3) System.out.println("PervasiveInfraRadio.handle: COMPLETE "+time+";"+event.transfer().message().msgId()+";"+event.transfer().from().id()+";"+event.transfer().to().id());
 				Transfer transfer2 = event.transfer();
 				if ( ! aborted_transfers.contains(transfer2) ){
 					transfer2.complete(time);
@@ -111,6 +121,8 @@ public class PervasiveInfraRadio extends Radio implements PresenceTrace.Handler 
 			@Override
 			public void handle(long time, Collection<PresenceEvent> events) {
 				for ( PresenceEvent pev : events ){
+					
+					if (D && present_node_ids.isEmpty()) System.out.println("PervasiveInfraRadio.PresenceEventListener.handle:"+time+":"+pev.id()+":"+pev.isIn());
 					Integer id = pev.id();
 					if ( pev.isIn() ){
 						present_node_ids.add(id);
@@ -136,7 +148,10 @@ public class PervasiveInfraRadio extends Radio implements PresenceTrace.Handler 
 		return new Listener<Presence>(){
 			@Override
 			public void handle(long time, Collection<Presence> events){
+				if(D) System.out.println("PervasiveInfraRadio.PresenceListener.handle:"+time);
 				for ( Presence p : events ) {
+					
+					if(D)System.out.println("event:"+p.toString());
 					present_node_ids.add(p.id());
 					tryStartNewPushUp(time, p.id());
 					tryStartNewPushDown(time, p.id());
@@ -146,20 +161,26 @@ public class PervasiveInfraRadio extends Radio implements PresenceTrace.Handler 
 	}
 	
 	protected void tryStartNewPushUp(long time, Integer id){
+		//if (D) System.out.println("PervasiveInfraRadio.TryStartnewPushUp:"+time+";"+id);
 		Router r = _world.getRouterById(id);
 		Router root = _world.getRouterById(root_id);
 		TransferOpportunity opp = r.getBestTransferTo(time, this, root);
 		if ( opp != null )
 			startNewTransfer(time, opp);
 	}
-	
+
 	protected void tryStartNewPushDown(long time, Integer id){
+		if (D && present_node_ids.size()<3) System.out.println("PervasiveInfraRadio.tryStartNewPushDown:"+time+";"+id);
 		Router root = _world.getRouterById(root_id);
 		Router r = _world.getRouterById(id);
+		
+
 		if ( r != null ){
 			TransferOpportunity opp = root.getBestTransferTo(time, this, r);
-			if ( opp != null )
+			if ( opp != null ){
+				if (D && present_node_ids.size()<2) System.out.println("	startNewTransfer:"+time+";"+opp.toString());
 				startNewTransfer(time, opp);
+			}
 		}
 	}
 	

@@ -13,6 +13,14 @@ public class ConnectedComponentWho extends DefaultWhoToPush
 	private List<Set<Integer>> _ccs;
 	private Set<Integer> present = new HashSet<Integer>();
 	
+	
+	/**
+	 * Decide the who to push strategy. Every time it calculates first the size of the best not infected connected components (CC)
+	 * If all CC have at least one infected node, it choose a random node within the one with the most uninfected nodes.
+	 * 
+	 * @param 
+	 * @return Integer
+	 */
 	@Override
 	public Integer whoToPush(Message msg, Set<Integer> infected, Set<Integer> sane){
 		recalc();
@@ -70,6 +78,12 @@ public class ConnectedComponentWho extends DefaultWhoToPush
 	private void updateNode(Integer from, Set<Integer> neighbors){
 		_neighbors.put(from, neighbors);
 	}
+	
+	
+	/**
+	 *  Updates the  connected components (_ccs) that exist in the network. Divides and groups nodes using
+	 * the _neighbor Map.
+	 */
 	
 	private void recalc(){
 		Set<Integer> toVisit = new HashSet<Integer>(present);

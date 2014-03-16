@@ -6,8 +6,6 @@ import ditl.sim.*;
 
 
 public class GPSDensity extends GPSWho {
-	
-		
 	@Override
 	public Integer whoToPush(Message msg, Set<Integer> infected, Set<Integer> sane){
 		if ( _mainZone == null ){

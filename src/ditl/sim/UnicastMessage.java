@@ -1,5 +1,8 @@
 package ditl.sim;
 
+import java.util.HashSet;
+import java.util.Set;
+
 public class UnicastMessage extends Message {
 
 	private Router _to;
@@ -26,11 +29,18 @@ public class UnicastMessage extends Message {
 		}
 		@Override
 		public UnicastMessage getNew(long creationTime, long expirationTime) {
+			System.out.println("Unicastmessage.getNew");
 			Router from = _world.getRandomRouter();
 			Router to = from;
 			while ( to.equals(from) )
 				to = _world.getRandomRouter();
 			return new UnicastMessage(from, to, nextBytes(), creationTime, expirationTime);
+		}
+		@Override
+		public Set<Router> defineMessageRecipients() {
+			Set<Router> group=new HashSet<Router>();
+			group.add(_world.getRandomRouter());
+			return  group;
 		}
 	}
 

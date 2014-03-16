@@ -37,4 +37,12 @@ public class RNG {
 		}
 		return group;
 	}
+	
+	public static boolean random(double p){
+		if ( rng == null )
+			RNG.init(0);
+		if ( rng.nextDouble() < p ) 
+			return true;
+		return false;
+	}
 }

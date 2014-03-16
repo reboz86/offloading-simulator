@@ -12,7 +12,7 @@ public class NeighborMessageQueuer
 	
 	private World _world;
 	private long send_incr;
-	private AdjacencyMatrix adjacency = new AdjacencyMatrix();
+	private AdjacencySet.Links adjacency = new AdjacencySet.Links();
 	private Set<Integer> present_ids = new HashSet<Integer>();
 	private Bus<Object> next_update_bus = new Bus<Object>();
 	private Integer root_id;
