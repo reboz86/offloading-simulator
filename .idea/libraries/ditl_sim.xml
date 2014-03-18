@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="ditl-sim">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/dist/ditl-sim.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

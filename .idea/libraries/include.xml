@@ -1,0 +1,12 @@
+<component name="libraryTable">
+  <library name="include">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/include/ditl-core.jar!/" />
+      <root url="jar://$PROJECT_DIR$/include/ditl-transfers.jar!/" />
+      <root url="jar://$PROJECT_DIR$/include/ditl-graphs.jar!/" />
+      <root url="jar://$PROJECT_DIR$/include/commons-cli-1.2.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
